@@ -2,9 +2,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 import { usePhoto } from "./usePhoto";
+import { PhotoUploadDialog } from "@/components/ui/file-upload";
+import { useState } from "react";
 
 export const Home = () => {
   const { listPhoto, isError } = usePhoto();
+  const [isOpen, setDialog] = useState(false);
 
   if (isError) {
     return <div>Something went wrong...</div>;
@@ -14,7 +17,7 @@ export const Home = () => {
     <>
       <div className="flex flex-row justify-between items-center">
         <h1 className="text-4xl font-bold">Your Photos</h1>
-        <Button>Upload</Button>
+        <Button onClick={() => setDialog(true)}>Upload</Button>
       </div>
 
       <hr className="my-8" />
@@ -42,6 +45,8 @@ export const Home = () => {
           </div>
         ))}
       </div>
+
+      <PhotoUploadDialog isOpen={isOpen} setDialog={setDialog} />
     </>
   );
 };

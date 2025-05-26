@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 
 // Fetch all photo IDs
 const fetchPhotoIds = async () => {
@@ -26,14 +27,14 @@ export const usePhoto = () => {
     data: photoIds,
     isFetching: idsLoading,
     error: idsError,
-  } = useQuery({ queryKey: ["photoIds"], queryFn: fetchPhotoIds });
+  } = useQuery({ queryKey: ["get", "photoIds"], queryFn: fetchPhotoIds });
 
   const {
     data: photos,
     isFetching: photosLoading,
     error: photosError,
   } = useQuery({
-    queryKey: ["photos"],
+    queryKey: ["get", photoIds?.length],
     queryFn: async () => {
       const photoBlobs = await Promise.all(photoIds?.map(fetchPhoto));
       return photoBlobs;
@@ -46,7 +47,7 @@ export const usePhoto = () => {
     isFetching: metadataLoading,
     error: metadataError,
   } = useQuery({
-    queryKey: ["metadatas"],
+    queryKey: ["get", photoIds?.length],
     queryFn: async () => {
       const photoBlobs = await Promise.all(photoIds?.map(fetchMetadata));
       return photoBlobs;
@@ -57,15 +58,17 @@ export const usePhoto = () => {
   const isLoading = idsLoading || photosLoading || metadataLoading;
   const isError = idsError || photosError || metadataError;
 
-  const listPhoto = photos?.map((photo) => {
-    const item = metadata?.find((meta) => meta.id == photo.id);
+  const listPhoto = useMemo(() => {
+    return photos?.map((photo) => {
+      const item = metadata?.find((meta) => meta.id == photo.id);
 
-    return {
-      id: photo.id,
-      url: photo.url,
-      metadata: item?.metadata,
-    };
-  });
+      return {
+        id: photo.id,
+        url: photo.url,
+        metadata: item?.metadata,
+      };
+    });
+  }, [metadata, photos]);
 
   return {
     listPhoto,
