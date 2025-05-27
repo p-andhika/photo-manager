@@ -1,5 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
+import { toast } from "sonner";
 
 // Fetch all photo IDs
 const fetchPhotoIds = async () => {
@@ -22,6 +23,15 @@ const fetchMetadata = async (id: string) => {
   const metadata = await res.json();
 
   return { id, metadata };
+};
+
+// Delete photo
+const photoDeletion = async (id: string) => {
+  const res = await fetch(`http://localhost:3003/photos/${id}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error("Failed to delete photo");
+  return res.json();
 };
 
 export const usePhoto = () => {
@@ -74,9 +84,33 @@ export const usePhoto = () => {
     });
   }, [metadata, photos]);
 
+  const { mutate, isPending } = useMutation({
+    mutationFn: photoDeletion,
+  });
+
+  const queryClient = useQueryClient();
+
+  const deletePhoto = (id: string, callback: () => void) => {
+    mutate(id, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({
+          queryKey: ["get"],
+        });
+
+        toast.success("Photo deleted successfully");
+        callback();
+      },
+      onError: (error) => {
+        toast.error("Delete failed: " + error.message);
+      },
+    });
+  };
+
   return {
     listPhoto,
     isLoading,
     isError,
+    deletePhoto,
+    isMutating: isPending,
   };
 };
