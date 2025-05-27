@@ -6,14 +6,21 @@ import { PhotoUploadDialog } from "@/components/ui/file-upload";
 import { useState } from "react";
 import { CircleX } from "lucide-react";
 import { DeleteDialog } from "./components/delete-dialog";
+import { EditDialog } from "./components/edit-dialog";
 
 export const Home = () => {
   const { listPhoto, isError } = usePhoto();
   const [isOpen, setDialog] = useState(false);
   const [isOpenDelete, setDeleteDialog] = useState(false);
-  const [selectedPhoto, setSelectedPhoto] = useState({
+  const [isOpenEdit, setEditDialog] = useState(false);
+  const [selectedPhoto, setSelectedPhoto] = useState<{
+    id: string;
+    url: string;
+    metadata: { tags: string[]; updatedAt: string };
+  }>({
     id: "",
     url: "",
+    metadata: { tags: [], updatedAt: "" },
   });
 
   if (isError) {
@@ -39,6 +46,7 @@ export const Home = () => {
                 setSelectedPhoto({
                   id: photo.id,
                   url: photo.url,
+                  metadata: photo.metadata,
                 });
               }}
             >
@@ -49,7 +57,16 @@ export const Home = () => {
               src={photo.url}
               alt={`Photo ${photo.metadata?.updatedAt}`}
               className="w-full h-60 object-cover rounded-lg shadow cursor-pointer"
+              onClick={() => {
+                setEditDialog(true);
+                setSelectedPhoto({
+                  id: photo.id,
+                  url: photo.url,
+                  metadata: photo.metadata,
+                });
+              }}
             />
+
             <span className="font-semibold text-base mt-2 cursor-pointer">
               Updated At: {photo.metadata?.updatedAt}
             </span>
@@ -57,9 +74,10 @@ export const Home = () => {
             <div className="flex flex-row items-center mt-2">
               Tags:
               <div className="flex flex-row gap-1.5 ml-2">
-                {photo.metadata?.tags.map((tag: string, i: number) => {
-                  return <Badge key={i}>{tag}</Badge>;
-                })}
+                {photo.metadata?.tags &&
+                  photo.metadata?.tags.map((tag: string, i: number) => {
+                    return <Badge key={i}>{tag}</Badge>;
+                  })}
               </div>
             </div>
           </div>
@@ -72,6 +90,13 @@ export const Home = () => {
         setDialog={setDeleteDialog}
         photoId={selectedPhoto.id}
         url={selectedPhoto.url}
+      />
+      <EditDialog
+        isOpen={isOpenEdit}
+        setDialog={setEditDialog}
+        photoId={selectedPhoto.id}
+        url={selectedPhoto.url}
+        metadata={selectedPhoto.metadata}
       />
     </>
   );

@@ -17,7 +17,7 @@ type Props = {
 };
 
 export const DeleteDialog = ({ isOpen, setDialog, photoId, url }: Props) => {
-  const { deletePhoto } = usePhoto();
+  const { photoDeletion } = usePhoto();
 
   return (
     <Dialog open={isOpen} onOpenChange={() => setDialog(false)}>
@@ -34,9 +34,11 @@ export const DeleteDialog = ({ isOpen, setDialog, photoId, url }: Props) => {
           />
         </div>
         <DialogFooter>
+          <Button onClick={() => setDialog(false)}>Cancel</Button>
           <Button
+            variant="destructive"
             onClick={() => {
-              deletePhoto(photoId, () => setDialog(false));
+              photoDeletion(photoId, () => setDialog(false));
             }}
           >
             Yes, delete

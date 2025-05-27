@@ -3,21 +3,21 @@ import { useMemo } from "react";
 import { toast } from "sonner";
 
 // Fetch all photo IDs
-const fetchPhotoIds = async () => {
+const getPhotoIds = async () => {
   const res = await fetch("http://localhost:3003/photos");
   if (!res.ok) throw new Error("Failed to fetch photo IDs");
   return res.json();
 };
 
 // Fetch photo by ID
-const fetchPhoto = async (id: string) => {
+const getPhoto = async (id: string) => {
   const res = await fetch(`http://localhost:3003/photos/${id}`);
   if (!res.ok) throw new Error(`Failed to fetch photo ${id}`);
   return { id, url: URL.createObjectURL(await res.blob()) };
 };
 
 // Fetch metadata by ID
-const fetchMetadata = async (id: string) => {
+const getMetadata = async (id: string) => {
   const res = await fetch(`http://localhost:3003/metadata/${id}`);
   if (!res.ok) throw new Error(`Failed to fetch metadata ${id}`);
   const metadata = await res.json();
@@ -25,8 +25,22 @@ const fetchMetadata = async (id: string) => {
   return { id, metadata };
 };
 
+// Update metadata
+const putMetadata = async (
+  id: string,
+  payload: { tags: string[]; updatedAt: string },
+) => {
+  const res = await fetch(`http://localhost:3003/metadata/${id}`, {
+    headers: { "Content-Type": "application/json" },
+    method: "PUT",
+    body: JSON.stringify({ metadata: payload }),
+  });
+  if (!res.ok) throw new Error("Failed to update metadata");
+  return res.json();
+};
+
 // Delete photo
-const photoDeletion = async (id: string) => {
+const deletePhoto = async (id: string) => {
   const res = await fetch(`http://localhost:3003/photos/${id}`, {
     method: "DELETE",
   });
@@ -39,7 +53,7 @@ export const usePhoto = () => {
     data: photoIds,
     isFetching: idsLoading,
     error: idsError,
-  } = useQuery({ queryKey: ["get", "photoIds"], queryFn: fetchPhotoIds });
+  } = useQuery({ queryKey: ["get", "photoIds"], queryFn: getPhotoIds });
 
   const {
     data: photos,
@@ -48,7 +62,7 @@ export const usePhoto = () => {
   } = useQuery({
     queryKey: ["get", "photos", photoIds?.length],
     queryFn: async () => {
-      const photoBlobs = await Promise.all(photoIds?.map(fetchPhoto));
+      const photoBlobs = await Promise.all(photoIds?.map(getPhoto));
 
       return photoBlobs;
     },
@@ -62,7 +76,7 @@ export const usePhoto = () => {
   } = useQuery({
     queryKey: ["get", "metadata", photoIds?.length],
     queryFn: async () => {
-      const metadata = await Promise.all(photoIds?.map(fetchMetadata));
+      const metadata = await Promise.all(photoIds?.map(getMetadata));
 
       return metadata;
     },
@@ -85,18 +99,29 @@ export const usePhoto = () => {
   }, [metadata, photos]);
 
   const { mutate, isPending } = useMutation({
-    mutationFn: photoDeletion,
+    mutationFn: deletePhoto,
   });
 
   const queryClient = useQueryClient();
 
-  const deletePhoto = (id: string, callback: () => void) => {
-    mutate(id, {
-      onSuccess: () => {
-        queryClient.invalidateQueries({
-          queryKey: ["get"],
-        });
+  const { mutate: deleteMutate, isPending: isDeleting } = useMutation({
+    mutationFn: deletePhoto,
+  });
 
+  const { mutate: updateMutate, isPending: isUpdating } = useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: { tags: string[]; updatedAt: string };
+    }) => putMetadata(id, payload),
+  });
+
+  const photoDeletion = (id: string, callback: () => void) => {
+    deleteMutate(id, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ["get"] });
         toast.success("Photo deleted successfully");
         callback();
       },
@@ -106,11 +131,31 @@ export const usePhoto = () => {
     });
   };
 
+  const updateMetadata = (
+    id: string,
+    payload: { tags: string[]; updatedAt: string },
+    callback: () => void,
+  ) => {
+    updateMutate(
+      { id, payload },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ["get"] });
+          toast.success("Metadata updated successfully");
+          callback();
+        },
+        onError: (error) => {
+          toast.error("Update failed: " + error.message);
+        },
+      },
+    );
+  };
+
   return {
     listPhoto,
     isLoading,
     isError,
-    deletePhoto,
-    isMutating: isPending,
+    photoDeletion,
+    updateMetadata,
   };
 };

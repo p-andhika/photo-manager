@@ -156,7 +156,7 @@ export const FileUpload = ({ onOpenChange }: Props) => {
 
           <div>
             <Label className="mb-2" htmlFor={id}>
-              Input with inner tags
+              Tags
             </Label>
             <TagInput
               id={id}
