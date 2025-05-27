@@ -1,12 +1,17 @@
-import { AlertCircle, CloudUpload, XIcon } from "lucide-react";
-import { useState } from "react";
+import { AlertCircle, CalendarIcon, CloudUpload, XIcon } from "lucide-react";
+import { useId, useState } from "react";
+import { format } from "date-fns";
+import { type Tag, TagInput } from "emblor";
 
 import { Button } from "../button";
 import { Alert, AlertDescription } from "../alert";
 import { Spinner } from "../spinner";
 import { useFileUpload } from "./useFileUpload";
 import { useUpload } from "./useUpload";
-import { formatDateToMMDDYYYY } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { Popover, PopoverContent, PopoverTrigger } from "../popover";
+import { Calendar } from "../calendar";
+import { Label } from "../label";
 
 type Props = {
   onOpenChange: (value: boolean) => void;
@@ -16,7 +21,11 @@ export const FileUpload = ({ onOpenChange }: Props) => {
   const maxSizeMB = 2;
   const maxSize = maxSizeMB * 1024 * 1024; // 2MB default
 
+  const id = useId();
   const [error, setError] = useState<string>("");
+  const [date, setDate] = useState<Date>();
+  const [tags, setTags] = useState<Tag[]>([]);
+  const [activeTagIndex, setActiveTagIndex] = useState<number | null>(null);
 
   const [
     { files, isDragging },
@@ -44,8 +53,8 @@ export const FileUpload = ({ onOpenChange }: Props) => {
     formData.append(
       "metadata",
       JSON.stringify({
-        tags: ["test"],
-        updatedAt: formatDateToMMDDYYYY(new Date()),
+        tags: tags.map((tag) => tag.text),
+        updatedAt: format(date as Date, "dd/MM/yyyy"),
       }),
     );
 
@@ -53,7 +62,6 @@ export const FileUpload = ({ onOpenChange }: Props) => {
   };
 
   const previewUrl = files[0]?.preview || null;
-  // const fileName = files[0]?.file.name || null;
 
   return (
     <div className="flex flex-col gap-4">
@@ -117,6 +125,60 @@ export const FileUpload = ({ onOpenChange }: Props) => {
               </p>
             </div>
           )}
+        </div>
+
+        <div className="flex flex-col gap-6 mt-5">
+          <div>
+            <Label className="mb-2">Updated At</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={"outline"}
+                  className={cn(
+                    "w-[240px] justify-start text-left font-normal",
+                    !date && "text-muted-foreground",
+                  )}
+                >
+                  <CalendarIcon />
+                  {date ? format(date, "PPP") : <span>Pick a date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={date}
+                  onSelect={setDate}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          <div>
+            <Label className="mb-2" htmlFor={id}>
+              Input with inner tags
+            </Label>
+            <TagInput
+              id={id}
+              tags={tags}
+              setTags={(newTags) => {
+                setTags(newTags);
+              }}
+              placeholder="Add a tag"
+              styleClasses={{
+                inlineTagsContainer:
+                  "border-input rounded-md bg-background shadow-xs transition-[color,box-shadow] p-1 gap-1",
+                input: "w-full min-w-[80px] shadow-none px-2 h-7",
+                tag: {
+                  body: "h-7 relative bg-background border border-input hover:bg-background rounded-md font-medium text-xs ps-2 pe-7",
+                  closeButton:
+                    "absolute -inset-y-px -end-px p-0 rounded-e-md flex size-7 transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] text-muted-foreground/80 hover:text-foreground",
+                },
+              }}
+              activeTagIndex={activeTagIndex}
+              setActiveTagIndex={setActiveTagIndex}
+            />
+          </div>
         </div>
 
         {previewUrl && (

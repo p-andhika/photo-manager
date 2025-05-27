@@ -19,7 +19,9 @@ const fetchPhoto = async (id: string) => {
 const fetchMetadata = async (id: string) => {
   const res = await fetch(`http://localhost:3003/metadata/${id}`);
   if (!res.ok) throw new Error(`Failed to fetch metadata ${id}`);
-  return { id, metadata: await res.json() };
+  const metadata = await res.json();
+
+  return { id, metadata };
 };
 
 export const usePhoto = () => {
@@ -34,9 +36,10 @@ export const usePhoto = () => {
     isFetching: photosLoading,
     error: photosError,
   } = useQuery({
-    queryKey: ["get", photoIds?.length],
+    queryKey: ["get", "photos", photoIds?.length],
     queryFn: async () => {
       const photoBlobs = await Promise.all(photoIds?.map(fetchPhoto));
+
       return photoBlobs;
     },
     enabled: photoIds?.length > 0,
@@ -47,10 +50,11 @@ export const usePhoto = () => {
     isFetching: metadataLoading,
     error: metadataError,
   } = useQuery({
-    queryKey: ["get", photoIds?.length],
+    queryKey: ["get", "metadata", photoIds?.length],
     queryFn: async () => {
-      const photoBlobs = await Promise.all(photoIds?.map(fetchMetadata));
-      return photoBlobs;
+      const metadata = await Promise.all(photoIds?.map(fetchMetadata));
+
+      return metadata;
     },
     enabled: photoIds?.length > 0,
   });

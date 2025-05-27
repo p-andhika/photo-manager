@@ -27,20 +27,20 @@ export const Home = () => {
           <div key={i} className="flex flex-col">
             <img
               src={photo.url}
-              alt={`Photo ${photo.metadata?.title}`}
+              alt={`Photo ${photo.metadata?.updatedAt}`}
               className="w-full h-60 object-cover rounded-lg shadow cursor-pointer"
             />
             <span className="font-semibold text-base mt-2 cursor-pointer">
-              {photo.metadata?.title}
+              Updated At: {photo.metadata?.updatedAt}
             </span>
-            <div className="flex flex-row gap-1.5 mt-2">
-              {photo.metadata?.tags.map((tag: string, i: number) => {
-                return (
-                  <Badge key={i} variant="secondary">
-                    {tag}
-                  </Badge>
-                );
-              })}
+
+            <div className="flex flex-row items-center mt-2">
+              Tags:
+              <div className="flex flex-row gap-1.5 ml-2">
+                {photo.metadata?.tags.map((tag: string, i: number) => {
+                  return <Badge key={i}>{tag}</Badge>;
+                })}
+              </div>
             </div>
           </div>
         ))}
