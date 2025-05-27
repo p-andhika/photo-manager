@@ -1,15 +1,6 @@
+import { postPhoto } from "@/lib/fetch";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-
-// Upload photo
-const postPhoto = async (payload: FormData) => {
-  const res = await fetch("http://localhost:3003/photos", {
-    method: "POST",
-    body: payload,
-  });
-  if (!res.ok) throw new Error("Failed to upload photo");
-  return res.json();
-};
 
 export const useUpload = () => {
   const queryClient = useQueryClient();
